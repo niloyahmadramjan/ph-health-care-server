@@ -16,7 +16,6 @@ export const validateRequest = (zodSchema: z.ZodObject) => {
 
                 throw new Error(result.error.issues[0].message)
             }
-
             req.body = result.data
 
             next()
