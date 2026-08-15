@@ -141,6 +141,17 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
     },
   });
 });
+const forgetPassword = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const result = await AuthService.forgetPassword(payload);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `OTP successfully sent to your email : ${payload.email}`,
+    data: null,
+  });
+});
 
 export const AuthController = {
   registerPatient,
@@ -148,4 +159,5 @@ export const AuthController = {
   getMe,
   refreshToken,
   googleLogin,
+  forgetPassword,
 };

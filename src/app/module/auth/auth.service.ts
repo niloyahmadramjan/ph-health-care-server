@@ -10,13 +10,17 @@ import config from "../../config";
 import { prisma } from "../../lib/prisma";
 import { jwtUtils } from "../../utils/jwt";
 import type {
+  IForgetPassPlayload,
   IGoogleLoginPayload,
   ILoginUserPayload,
   IRegisterPatientPayload,
   IRequestUser,
+  IResetPassPlayload,
 } from "./auth.interface";
 import { googleClient } from "../../lib/googleAuth";
 import type { TokenPayload } from "google-auth-library";
+import crypto from "crypto";
+import { redisClient } from "../../lib/redisConfig";
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
   const { name, password, patient: patientData } = payload;
@@ -344,10 +348,61 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
   };
 };
 
+const forgetPassword = async (payload: IForgetPassPlayload) => {
+  const { email } = payload;
+  const generateOtp = crypto.randomInt(100000, 10000000);
+  const key = `forgetEmailOtp:${email}`;
+  await redisClient.set(key, generateOtp, {
+    EX: 60 * 5,
+  });
+  return email;
+};
+
+const resetPassword = async (payload: IResetPassPlayload) => {
+  const { email, password, otp } = payload;
+
+  const checkUser = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  if (!checkUser) {
+    throw new Error("Inavalid email");
+  }
+  const getOTP = await redisClient.get(`forgetEmailOtp:${email}`);
+  if (!getOTP) {
+    throw new Error("OTP expired try to another one");
+  }
+
+  const matchOTP = otp === getOTP;
+  if (!matchOTP) {
+    throw new Error("OTP expired try again");
+  }
+
+  const hashedPassword = await bcrypt.hash(
+    password,
+    Number(config.bcrypt_salt_rounds),
+  );
+
+  await prisma.user.update({
+    where: {
+      email: checkUser.email,
+    },
+    data: {
+      password: hashedPassword,
+    },
+  });
+
+  return email;
+};
+
 export const AuthService = {
   registerPatient,
   loginUser,
   getMe,
   refreshToken,
   googleLogin,
+  forgetPassword,
+  resetPassword,
 };

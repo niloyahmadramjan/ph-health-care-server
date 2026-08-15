@@ -24,3 +24,15 @@ export interface IRequestUser {
 export interface IGoogleLoginPayload {
   idToken: string;
 }
+
+
+export interface IForgetPassPlayload {
+  email: string
+}
+
+
+export interface IResetPassPlayload {
+  email: string,
+  otp: string,
+  password: string
+}
