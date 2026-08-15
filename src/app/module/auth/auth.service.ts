@@ -21,6 +21,9 @@ import { googleClient } from "../../lib/googleAuth";
 import type { TokenPayload } from "google-auth-library";
 import crypto from "crypto";
 import { redisClient } from "../../lib/redisConfig";
+import { sentEmail } from "../../utils/sentEmail";
+import ejs from "ejs";
+import path from "path";
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
   const { name, password, patient: patientData } = payload;
@@ -350,27 +353,69 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 
 const forgetPassword = async (payload: IForgetPassPlayload) => {
   const { email } = payload;
-  const generateOtp = crypto.randomInt(100000, 10000000);
+
+  const isExistUser = await prisma.user.findUniqueOrThrow({
+    where: {
+      email,
+    },
+  });
+  if (!isExistUser) {
+    throw new Error("Invalid email address");
+  }
+  if (isExistUser.status === "BLOCKED") {
+    throw new Error(
+      "Oops your account is blocked please contact wiht support center ",
+    );
+  }
+  if (isExistUser.status === "DELETED") {
+    throw new Error("Oops your account is deleted ");
+  }
+
+  const generateOtp = crypto.randomInt(100000, 1000000);
   const key = `forgetEmailOtp:${email}`;
   await redisClient.set(key, generateOtp, {
     EX: 60 * 5,
   });
-  return email;
+
+  const templatePath = path.join(
+    process.cwd(),
+    "src/app/templates/forget-password.ejs",
+  );
+
+  const html = await ejs.renderFile(templatePath, {
+    name: isExistUser.name,
+    otp: generateOtp,
+    year: new Date().getFullYear(),
+  });
+
+  /// email sent function
+
+  await sentEmail.sendMail({
+    from: `"PH HEALTH CARE" <${config.smtp_user}>`,
+    // to: isExistUser.email,
+    to: "mdramjansharifkhan@gmail.com",
+    subject: "Password Reset OTP",
+    html,
+  });
+
+  return { email: isExistUser.email };
 };
 
 const resetPassword = async (payload: IResetPassPlayload) => {
   const { email, password, otp } = payload;
 
-  const checkUser = await prisma.user.findUnique({
+  const isExistUser = await prisma.user.findUnique({
     where: {
       email,
     },
   });
 
-  if (!checkUser) {
+  if (!isExistUser) {
     throw new Error("Inavalid email");
   }
-  const getOTP = await redisClient.get(`forgetEmailOtp:${email}`);
+
+  const key = `forgetEmailOtp:${email}`;
+  const getOTP = await redisClient.get(key);
   if (!getOTP) {
     throw new Error("OTP expired try to another one");
   }
@@ -387,14 +432,38 @@ const resetPassword = async (payload: IResetPassPlayload) => {
 
   await prisma.user.update({
     where: {
-      email: checkUser.email,
+      email: isExistUser.email,
     },
     data: {
       password: hashedPassword,
     },
   });
 
-  return email;
+  await redisClient.del(key);
+
+  const tempatePath = path.join(
+    process.cwd(),
+    "src/app/templates/password-changed.ejs",
+  );
+
+  // here implement the email sent function
+  /// email sent function
+  const html = await ejs.renderFile(tempatePath, {
+    name: isExistUser.name,
+    email: isExistUser.email,
+    date: new Date().toLocaleString(),
+    year: new Date().getFullYear(),
+  });
+
+  await sentEmail.sendMail({
+    from: `"PH HEALTH CARE" <${config.smtp_user}>`,
+    // to: isExistUser.email,
+    to: "mdramjansharifkhan@gmail.com",
+    subject: "Password Changed Successfully",
+    html,
+  });
+
+  return { email: isExistUser.email };
 };
 
 export const AuthService = {

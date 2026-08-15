@@ -33,4 +33,6 @@ export default {
   redis_pass: process.env.REDIS_PASS!,
   redis_host: process.env.REDIS_HOST!,
   redis_port: process.env.REDIS_PORT!,
+  smtp_user: process.env.SMTP_USER,
+  smtp_pass: process.env.SMTP_PASS,
 };

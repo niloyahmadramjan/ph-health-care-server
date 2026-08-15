@@ -7,7 +7,11 @@ import { authValidation } from "./auth.validation";
 
 const router = Router();
 
-router.post("/register",UserValidation.validateRequest(authValidation.PatientRegistrationZodSchema), AuthController.registerPatient);
+router.post(
+  "/register",
+  UserValidation.validateRequest(authValidation.PatientRegistrationZodSchema),
+  AuthController.registerPatient,
+);
 router.post("/login", AuthController.loginUser);
 router.get(
   "/me",
@@ -16,6 +20,7 @@ router.get(
 );
 router.post("/refresh-token", AuthController.refreshToken);
 router.post("/google", AuthController.googleLogin);
-router.post("/forget-password", AuthController.forgetPassword)
+router.post("/forget-password", AuthController.forgetPassword);
+router.post("/reset-password", AuthController.resetPassword);
 
 export const AuthRoutes = router;
