@@ -9,7 +9,22 @@ const registerPatient = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const result = await AuthService.registerPatient(payload);
 
-  const { accessToken, refreshToken, user, patient } = result;
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: result.data,
+    data: {
+      message:
+        "Successfully sent otp your email address plasea check and verify your account",
+    },
+  });
+});
+
+const verifyOtpAndRegister = catchAsync(async (req: Request, res: Response) => {
+  const email = req.body.email;
+  const otp = req.body.otp;
+  const { accessToken, refreshToken, data } =
+    await AuthService.verifyOtpAndRegister(email, otp);
 
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
@@ -27,13 +42,8 @@ const registerPatient = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: "Patient registered successfully",
-    data: {
-      accessToken,
-      refreshToken,
-      user,
-      patient,
-    },
+    message: "successfully created your account.",
+    data: { accessToken, refreshToken, data },
   });
 });
 
@@ -174,4 +184,5 @@ export const AuthController = {
   googleLogin,
   forgetPassword,
   resetPassword,
+  verifyOtpAndRegister,
 };

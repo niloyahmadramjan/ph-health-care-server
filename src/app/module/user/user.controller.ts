@@ -2,17 +2,29 @@ import { Request, Response } from "express";
 import httpStatus from "http-status";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
+import { AppError } from "../../utils/AppError";
+import { UserServices } from "./user.service";
 
-const UploadProfileImage = catchAsync(async (req: Request, res: Response) => {
-  sendResponse(res, {
-    statusCode: httpStatus.CREATED,
-    success: true,
-    message: "Profile image uploaded successfully!",
-    data: null,
-  });
+const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
+	if (!req.file) {
+		throw new AppError(httpStatus.BAD_REQUEST, "No File Provided.");
+	}
+
+	const userId = req.user?.userId;
+
+	const result = await UserServices.uploadProfileImage(
+		req.file?.buffer,
+		userId!,
+	);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "New tokens generated successfully",
+		data: result,
+	});
 });
 
 
 export const UserController = {
-    UploadProfileImage
+    uploadProfileImage
 }

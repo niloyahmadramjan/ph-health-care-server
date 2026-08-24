@@ -24,6 +24,7 @@ export const validateRequest = (zodSchema: z.ZodObject) => {
     )
 }
 
+
 export const UserValidation = {
     validateRequest
 }

@@ -39,16 +39,86 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
 
   const hashedPassword = await bcrypt.hash(password, 8);
 
+  const userRegisterData = {
+    name,
+    email,
+    password: hashedPassword,
+    role: Role.PATIENT,
+    status: UserStatus.ACTIVE,
+    emailVerified: false,
+    patient: {
+      create: { name, email, contactNumber: patientData?.contactNumber },
+    },
+  };
+  const registerJsonData = JSON.stringify(userRegisterData);
+  const registrationKey = `registrationEmail:${email}`;
+
+  await redisClient.set(registrationKey, registerJsonData, {
+    EX: 60 * 5,
+  });
+
+  const generateOtp = crypto.randomInt(100000, 1000000);
+  const key = `registrationEmailOtp:${email}`;
+  await redisClient.set(key, generateOtp, {
+    EX: 60 * 5,
+  });
+
+  const templatePath = path.join(
+    process.cwd(),
+    "src/app/templates/forget-password.ejs",
+  );
+
+  const html = await ejs.renderFile(templatePath, {
+    name: name,
+    otp: generateOtp,
+    year: new Date().getFullYear(),
+  });
+
+  /// email sent function
+
+  await sentEmail.sendMail({
+    from: `"PH HEALTH CARE" <${config.smtp_user}>`,
+    to: email,
+    subject: "Email verify OTP",
+    html,
+  });
+
+  return {
+    data: "For complete registration please verify your email",
+  };
+};
+
+const verifyOtpAndRegister = async (email: string, otp: string) => {
+  const registrationKey = `registrationEmail:${email}`;
+  const key = `registrationEmailOtp:${email}`;
+  const getRedisData = await redisClient.get(registrationKey);
+
+  if (!getRedisData) {
+    throw new Error("Please register again before registration data expired!");
+  }
+  const getRedisOtp = await redisClient.get(key);
+  if (!getRedisOtp) {
+    throw new Error("Oops invalid OTP");
+  }
+  if (getRedisOtp !== otp) {
+    throw new Error("Oops invalid OTP");
+  }
+
+  const paseUserData = JSON.parse(getRedisData);
   const createdUser = await prisma.user.create({
     data: {
-      name,
-      email,
-      password: hashedPassword,
+      name: paseUserData.name,
+      email: paseUserData.email,
+      password: paseUserData.hashedPassword,
       role: Role.PATIENT,
       status: UserStatus.ACTIVE,
       emailVerified: false,
       patient: {
-        create: { name, email, contactNumber: patientData?.contactNumber },
+        create: {
+          name: paseUserData.name,
+          email,
+          contactNumber: paseUserData.patientData?.contactNumber,
+        },
       },
     },
     omit: { password: true },
@@ -76,10 +146,9 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
   );
 
   return {
-    user,
-    patient,
     accessToken,
     refreshToken,
+    data : {...createdUser}
   };
 };
 
@@ -474,4 +543,5 @@ export const AuthService = {
   googleLogin,
   forgetPassword,
   resetPassword,
+  verifyOtpAndRegister
 };
