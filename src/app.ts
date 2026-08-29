@@ -12,6 +12,7 @@ import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { UserRoutes } from "./app/module/user/user.route";
 import { getBkashIdToken } from "./app/lib/bkash";
+import { AppointmentRoutes } from "./app/module/appointment/appointment.route";
 
 const app: Application = express();
 
@@ -30,7 +31,9 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/v1/auth", AuthRoutes);
-app.use("/api/v1/user", UserRoutes);
+app.use("/api/v1/user", UserRoutes); 
+app.use("/api/v1/appointment", AppointmentRoutes); 
+
 
 app.get("/test", async (req: Request, res: Response) => {
   const bkashToken = await getBkashIdToken();
