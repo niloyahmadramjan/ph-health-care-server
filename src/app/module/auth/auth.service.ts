@@ -109,7 +109,7 @@ const verifyOtpAndRegister = async (email: string, otp: string) => {
     data: {
       name: paseUserData.name,
       email: paseUserData.email,
-      password: paseUserData.hashedPassword,
+      password: paseUserData.password,
       role: Role.PATIENT,
       status: UserStatus.ACTIVE,
       emailVerified: false,
@@ -148,7 +148,7 @@ const verifyOtpAndRegister = async (email: string, otp: string) => {
   return {
     accessToken,
     refreshToken,
-    data : {...createdUser}
+    data: { ...createdUser },
   };
 };
 
@@ -174,6 +174,10 @@ const loginUser = async (payload: ILoginUserPayload) => {
 
   if (user.password == null && user.googleId !== null) {
     throw new Error("User is already has account try to login with google");
+  }
+
+  if (!user.password) {
+    throw new Error("Password is not set for this account");
   }
 
   const isPasswordMatched = await bcrypt.compare(
@@ -543,5 +547,5 @@ export const AuthService = {
   googleLogin,
   forgetPassword,
   resetPassword,
-  verifyOtpAndRegister
+  verifyOtpAndRegister,
 };

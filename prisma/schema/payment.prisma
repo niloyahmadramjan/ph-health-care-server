@@ -11,7 +11,7 @@ model payment {
     paidAt String?
     getwayResponse Json?
     refundTrxId String?
-    refundAmmount Decimal @db.Decimal(10,2)
+    refundAmmount Decimal? @db.Decimal(10,2)
     refundReason String?
     refundedAt String?
 

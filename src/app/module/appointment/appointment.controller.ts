@@ -8,7 +8,9 @@ import { appointmentService } from "./appointment.service";
 const appointmentPaymentCreate = catchAsync(
 
   async (req: Request, res: Response) => {
-    const result = await appointmentService.appointmentBook();
+    const payload = req.body;
+    const user = req.user!
+    const result = await appointmentService.appointmentBook(payload,user);
     console.log(result);
 
     sendResponse(res, {
