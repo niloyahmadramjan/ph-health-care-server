@@ -14,7 +14,8 @@ model Doctor {
   reviewedBy      String?
   reviewedAt      DateTime?
   resume          String?
-  addionalFiles   String[]
+  resumePublicId String?
+  addionalFiles   Json
   isDeleted       Boolean            @default(false)
   deletedAt       DateTime?
   createdAt       DateTime           @default(now())
