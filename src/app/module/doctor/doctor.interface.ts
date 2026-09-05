@@ -1,4 +1,6 @@
-export interface doctorPayload {
+import { DoctorVerifyStatus } from "../../../generated/prisma/enums";
+
+export interface IDoctorPayload {
   name: string;
   email: string;
   specialization: string;
@@ -11,8 +13,23 @@ export interface doctorPayload {
   address?: string;
 }
 
-
 export interface IDoctorEmailVerify {
-  email: string,
-  otp: string
+  email: string;
+  otp: string;
+}
+
+export interface IApprovedDoctor {
+  doctorId: string;
+  verificationStatus: DoctorVerifyStatus;
+  rejectionReason?: string;
+}
+
+export interface IQuery {
+  searchTerm?: string;
+  page?: string;
+  limit?: string;
+  sortOrder?: string;
+  sortBy?: string;
+    // any others filter fields can be added here
+  [key: string]: any
 }

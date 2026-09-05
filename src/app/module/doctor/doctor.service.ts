@@ -1,6 +1,11 @@
 import { UploadApiResponse } from "cloudinary";
 import { prisma } from "../../lib/prisma";
-import { doctorPayload, IDoctorEmailVerify } from "./doctor.interface";
+import {
+  IDoctorPayload,
+  IDoctorEmailVerify,
+  IApprovedDoctor,
+  IQuery,
+} from "./doctor.interface";
 import { cloudinaryUpload } from "../../lib/cloudinary";
 import crypto from "crypto";
 import { redisClient } from "../../lib/redisConfig";
@@ -8,10 +13,11 @@ import path from "path";
 import { sentEmail } from "../../utils/sentEmail";
 import config from "../../config";
 import ejs from "ejs";
-import { Role } from "../../../generated/prisma/enums";
+import { DoctorVerifyStatus, Role } from "../../../generated/prisma/enums";
+import { RequestUser } from "../../middleware/checkAuth";
 
 const applyAsDoctor = async (
-  payload: doctorPayload,
+  payload: IDoctorPayload,
   resume: Express.Multer.File | null,
   additionalFiles: Express.Multer.File[],
 ) => {
@@ -183,7 +189,105 @@ const verifyDoctorEmail = async (payload: IDoctorEmailVerify) => {
   return verifyDoctorEmail;
 };
 
+const approvedDoctorProfile = async (
+  payload: IApprovedDoctor,
+  reviewer: RequestUser,
+) => {
+  const { doctorId, verificationStatus, rejectionReason } = payload;
+
+  const existingDoctor = await prisma.doctor.findUnique({
+    where: {
+      id: doctorId,
+    },
+    include: { user: true },
+  });
+
+  if (!existingDoctor) {
+    throw new Error("Doctor application not found");
+  }
+  if (existingDoctor.isDeleted) {
+    throw new Error("Doctor has been deleted");
+  }
+  if (!existingDoctor.user.emailVerified) {
+    throw new Error(
+      "Doctor has not verify their email yet. Application cannot be reviewed",
+    );
+  }
+  if (existingDoctor.status !== DoctorVerifyStatus.PEDDING) {
+    throw new Error(
+      `Doctor application has been ${existingDoctor.status.toLowerCase()}`,
+    );
+  }
+  if (verificationStatus === DoctorVerifyStatus.REJECTED && !rejectionReason) {
+    throw new Error(
+      "Rejection reason is required when rejection a doctor application",
+    );
+  }
+
+  const updateDoctor = await prisma.doctor.update({
+    where: {
+      id: doctorId,
+    },
+    data: {
+      status: verificationStatus,
+      rejectionReason:
+        verificationStatus === DoctorVerifyStatus.REJECTED
+          ? rejectionReason
+          : null,
+      reviewedBy: reviewer.userId,
+      reviewedAt: new Date(),
+    },
+    include: { user: true },
+  });
+
+  // sent email for reject or approve
+
+  const isApproved = verificationStatus === DoctorVerifyStatus.APPROVED;
+
+  const templatePath = path.join(
+    process.cwd(),
+    `src/app/templates/${isApproved ? "doctor-application-approved.ejs" : "doctor-application-rejected.ejs"}`,
+  );
+
+  const templeteData = {
+    name: updateDoctor.user.name,
+    reason: updateDoctor.rejectionReason,
+  };
+
+  const html = await ejs.renderFile(templatePath, templeteData);
+
+  await sentEmail.sendMail({
+    from: `"PH HEALTH CARE" <${config.smtp_user}>`,
+    to: updateDoctor.email,
+    subject: isApproved
+      ? "Your Doctor Application Has Been Approved"
+      : "Your Doctor Application Has Been Rejected",
+    html,
+  });
+
+  return updateDoctor;
+};
+
+const getAllDoctor = async(query: IQuery)=>{
+
+  // search filter sorting  pagination
+  const allDoctors = await prisma.doctor.findMany({
+    where: {
+      isDeleted: false,
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  return allDoctors;
+}
+
+
+
 export const doctorServices = {
   applyAsDoctor,
   verifyDoctorEmail,
+  approvedDoctorProfile,
+  getAllDoctor
 };
