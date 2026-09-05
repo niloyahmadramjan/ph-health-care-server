@@ -10,3 +10,9 @@ export interface doctorPayload {
   consultationFee?: number;
   address?: string;
 }
+
+
+export interface IDoctorEmailVerify {
+  email: string,
+  otp: string
+}

@@ -1,7 +1,14 @@
 import { UploadApiResponse } from "cloudinary";
 import { prisma } from "../../lib/prisma";
-import { doctorPayload } from "./doctor.interface";
+import { doctorPayload, IDoctorEmailVerify } from "./doctor.interface";
 import { cloudinaryUpload } from "../../lib/cloudinary";
+import crypto from "crypto";
+import { redisClient } from "../../lib/redisConfig";
+import path from "path";
+import { sentEmail } from "../../utils/sentEmail";
+import config from "../../config";
+import ejs from "ejs";
+import { Role } from "../../../generated/prisma/enums";
 
 const applyAsDoctor = async (
   payload: doctorPayload,
@@ -18,8 +25,9 @@ const applyAsDoctor = async (
     throw new Error("User already exists with this email");
   }
   // single file upload
-  
-  const resumeUploadResult = await new Promise<UploadApiResponse>(   (resolve, reject) => {
+
+  const resumeUploadResult = await new Promise<UploadApiResponse>(
+    (resolve, reject) => {
       cloudinaryUpload.uploader
         .upload_stream(
           {
@@ -90,13 +98,92 @@ const applyAsDoctor = async (
     },
   });
 
+  const expirationseconds = 60 * 60; // 1h
+  const otpKey = `doctor-application:otp${payload.email}`;
+
+  const otpValue = crypto.randomInt(1000000, 10000000).toString();
+
+  await redisClient.set(otpKey, otpValue, {
+    expiration: {
+      type: "EX",
+      value: expirationseconds,
+    },
+  });
+
+  const templatePath = path.join(
+    process.cwd(),
+    "src/app/templates/forget-password.ejs",
+  );
+
+  const html = await ejs.renderFile(templatePath, {
+    name: name,
+    otp: otpValue,
+    year: new Date().getFullYear(),
+  });
+
+  /// email sent function
+
+  await sentEmail.sendMail({
+    from: `"PH HEALTH CARE" <${config.smtp_user}>`,
+    to: payload.email,
+    subject: "Email verify OTP",
+    html,
+  });
+
   return {
     resumeUploadResult,
     additionalFilesUploadResults,
-    doctorApplicagtion
+    doctorApplicagtion,
   };
+};
+
+const verifyDoctorEmail = async (payload: IDoctorEmailVerify) => {
+  const otp = payload.otp;
+  const email = payload.email;
+
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      email,
+      role: Role.DOCTOR,
+    },
+  });
+
+  if (!existingUser) {
+    throw new Error("Doctor Application not found. please apply again");
+  }
+
+  if (existingUser.emailVerified) {
+    throw new Error("Email already verified");
+  }
+
+  const otpKey = `doctor-application:otp${email}`;
+  const redisOtp = await redisClient.get(otpKey);
+
+  if (!redisOtp) {
+    throw new Error(
+      "OTP expired. Your application window has been closed. please apply again",
+    );
+  }
+  if (redisOtp !== otp) {
+    throw new Error("OTP does not match");
+  }
+  await redisClient.del(otpKey);
+
+  const verifyDoctorEmail = await prisma.user.update({
+    where: {
+      id: existingUser.id,
+    },
+    data: {
+      emailVerified: true,
+    },
+    omit: { password: true },
+    include: { doctor: true },
+  });
+
+  return verifyDoctorEmail;
 };
 
 export const doctorServices = {
   applyAsDoctor,
+  verifyDoctorEmail,
 };

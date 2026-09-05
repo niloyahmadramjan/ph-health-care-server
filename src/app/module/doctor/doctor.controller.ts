@@ -26,7 +26,7 @@ const appliedAsDoctor = catchAsync(async (req: Request, res: Response) => {
       httpStatus.BAD_REQUEST,
       zodValidationResult.error.issues[0].message,
     );
-  } 
+  }
   const payload = zodValidationResult.data;
 
   // console.log(resume,additionalFiles,payload)
@@ -46,6 +46,33 @@ const appliedAsDoctor = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const verifyDoctorEmail = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+
+  const result = await doctorServices.verifyDoctorEmail(payload);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Email verified successfully",
+    data: result,
+  });
+});
+
+const approvedDoctor = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+
+  const result = await doctorServices.verifyDoctorEmail(payload);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Doctor approved successfully",
+    data: result,
+  });
+});
+
 export const DoctorController = {
   appliedAsDoctor,
+  verifyDoctorEmail,
 };
