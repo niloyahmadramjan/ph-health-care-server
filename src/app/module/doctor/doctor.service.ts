@@ -15,6 +15,7 @@ import config from "../../config";
 import ejs from "ejs";
 import { DoctorVerifyStatus, Role } from "../../../generated/prisma/enums";
 import { RequestUser } from "../../middleware/checkAuth";
+import { DoctorWhereInput } from "../../../generated/prisma/models";
 
 const applyAsDoctor = async (
   payload: IDoctorPayload,
@@ -268,26 +269,122 @@ const approvedDoctorProfile = async (
   return updateDoctor;
 };
 
-const getAllDoctor = async(query: IQuery)=>{
+const getAllDoctor = async (query: IQuery) => {
+  const limit = query.limit ? Number(query.limit) : 10;
+  const page = query.page ? Number(query.page) : 1;
+  const skip = (page - 1) * limit;
+  const sortBy = query.sortBy ? query.sortBy : "createdAt";
+  const sortOrder = query.sortOrder ? query.sortOrder : "desc";
+
+  const andConditions: DoctorWhereInput[] = [];
+
+  //  searching
+
+  if (query.searchTerm) {
+    andConditions.push({
+      OR: [
+        {
+          licenseNumber: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          email: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          specialization: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          address: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+      ],
+    });
+  }
+
+  // filtering
+
+  if (query.specialization) {
+    andConditions.push({
+      specialization: { equals: query.specialization, mode: "insensitive" },
+    });
+  }
+
+  if (query.email) {
+    andConditions.push({
+      email: { equals: query.email, mode: "insensitive" },
+    });
+  }
+
+  if (query.licenseNumber) {
+    andConditions.push({
+      licenseNumber: { equals: query.licenseNumber, mode: "insensitive" },
+    });
+  }
+
+  if (query.status) {
+    andConditions.push({
+      status: { equals: query.status as DoctorVerifyStatus },
+    });
+  }
+  // if (query.isDeleted) {
+  //   andConditions.push({
+  //     isDeleted: query.isDeleted === "true" ? true : false,
+  //   });
+  // }
+
+  andConditions.push({ isDeleted: false });
 
   // search filter sorting  pagination
   const allDoctors = await prisma.doctor.findMany({
     where: {
-      isDeleted: false,
+      AND: andConditions.length > 0 ? andConditions : undefined,
+    },
+    take: limit,
+    skip: skip,
+    orderBy: {
+      [sortBy]: sortOrder,
     },
     include: {
-      user: true,
+      user: {
+        omit: { password: true },
+      },
     },
+    // schedule : true,
+    // appointment: true,
+    // prescriptions: true
   });
+  
 
-  return allDoctors;
-}
+   const totalDoctorCount = await prisma.doctor.count({
+        where : {
+            AND : andConditions
+        }
+    })
 
-
+    return {
+        data : allDoctors,
+        meta : {
+            page : page,
+            limit : limit,
+            total : totalDoctorCount,
+            totalPages : Math.ceil(totalDoctorCount / limit)
+        }
+    }
+};
 
 export const doctorServices = {
   applyAsDoctor,
   verifyDoctorEmail,
   approvedDoctorProfile,
-  getAllDoctor
+  getAllDoctor,
 };
