@@ -108,15 +108,13 @@ const getMySchedule = async (query: IQuery, user: RequestUser) => {
     skip,
     orderBy: { startDateTime: "desc" },
     include: {
-        appointments: {
-            include: {
-                patient: true
-            }
-        }
-
-    }
+      appointments: {
+        include: {
+          patient: true,
+        },
+      },
+    },
   });
-
 
   const total = await prisma.schedule.count({
     where: {
@@ -135,9 +133,105 @@ const getMySchedule = async (query: IQuery, user: RequestUser) => {
   };
 };
 
+const getAllSchedules = async (query: IQuery, user: RequestUser) => {
+  const limit = query.limit ? Number(query.limit) : 10;
+  const page = query.page ? Number(query.page) : 1;
+  const skip = (page - 1) * limit;
+  const sortBy = query.sortBy ? query.sortBy : "createdAt";
+  const sortOrder = query.sortOrder ? query.sortOrder : "desc";
 
+  const andConditions: ScheduleWhereInput[] = [];
+
+  if (query.doctorId) {
+    andConditions.push({ doctorId: query.doctorId });
+  }
+  if (query.email) {
+    andConditions.push({
+      doctor: {
+        email: query.email,
+      },
+    });
+  }
+  if (query.searchTerm) {
+    andConditions.push({
+      OR: [
+        {
+          doctor: {
+            email: {
+              contains: query.searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+      ],
+    });
+  }
+
+  const schedule = await prisma.schedule.findMany({
+    where: {
+      AND: andConditions,
+    },
+    take: limit,
+    skip,
+    orderBy: {
+      [sortBy]: sortOrder,
+    },
+    include: {
+      appointments: {
+        include: {
+          patient: true,
+        },
+      },
+    },
+  });
+
+  const total = await prisma.schedule.count({
+    where: {
+      AND: andConditions,
+    },
+  });
+
+  return {
+    data: schedule,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
+    },
+  };
+};
+
+const getScheduleByid = async (scheduleid: string) => {
+  const schedule = await prisma.schedule.findUnique({
+    where: {
+      id: scheduleid,
+    },
+    include: {
+      doctor: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          specialization: true,
+          userId: true,
+        },
+      },
+      appointments: {
+        include: { patient: true },
+      },
+    },
+  });
+  if (!schedule || schedule.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Schedule not found");
+  }
+
+  return schedule;
+};
 
 export const ScheduleService = {
   createShedule,
   getMySchedule,
+  getAllSchedules,
+  getScheduleByid,
 };
