@@ -23,7 +23,7 @@ enum AuthProvider {
 }
 
 enum AppointmentStatus {
-  PEDDING
+  PENDING
   CONFIRMED
   CANCELLED
   ONGOING
@@ -39,7 +39,13 @@ enum PaymentStatus {
 }
 
 enum DoctorVerifyStatus {
-  PEDDING
+  PENDING
   APPROVED
   REJECTED
+}
+
+
+enum ScheduleStatus {
+  DRAFT
+  PUBLISHED
 }

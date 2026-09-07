@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "DoctorVerifyStatus" AS ENUM ('PEDDING', 'APPROVED', 'REJECTED');
+CREATE TYPE "DoctorVerifyStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
 -- CreateTable
 CREATE TABLE "doctors" (
@@ -13,7 +13,7 @@ CREATE TABLE "doctors" (
     "bio" TEXT,
     "consultationFee" DECIMAL(10,2),
     "contactNumber" TEXT,
-    "status" "DoctorVerifyStatus" NOT NULL DEFAULT 'PEDDING',
+    "status" "DoctorVerifyStatus" NOT NULL DEFAULT 'PENDING',
     "rejectionReason" TEXT,
     "reviewedBy" TEXT,
     "reviewedAt" TIMESTAMP(3),

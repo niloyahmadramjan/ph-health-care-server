@@ -214,7 +214,7 @@ const approvedDoctorProfile = async (
       "Doctor has not verify their email yet. Application cannot be reviewed",
     );
   }
-  if (existingDoctor.status !== DoctorVerifyStatus.PEDDING) {
+  if (existingDoctor.status !== DoctorVerifyStatus.PENDING) {
     throw new Error(
       `Doctor application has been ${existingDoctor.status.toLowerCase()}`,
     );
@@ -363,23 +363,22 @@ const getAllDoctor = async (query: IQuery) => {
     // appointment: true,
     // prescriptions: true
   });
-  
 
-   const totalDoctorCount = await prisma.doctor.count({
-        where : {
-            AND : andConditions
-        }
-    })
+  const totalDoctorCount = await prisma.doctor.count({
+    where: {
+      AND: andConditions,
+    },
+  });
 
-    return {
-        data : allDoctors,
-        meta : {
-            page : page,
-            limit : limit,
-            total : totalDoctorCount,
-            totalPages : Math.ceil(totalDoctorCount / limit)
-        }
-    }
+  return {
+    data: allDoctors,
+    meta: {
+      page: page,
+      limit: limit,
+      total: totalDoctorCount,
+      totalPages: Math.ceil(totalDoctorCount / limit),
+    },
+  };
 };
 
 export const doctorServices = {

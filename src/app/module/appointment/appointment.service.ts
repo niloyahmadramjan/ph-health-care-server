@@ -11,7 +11,7 @@ const appointmentBook = async (payload: any, user: RequestUser) => {
   const transactionResult = await prisma.$transaction(async (tx) => {
     const appointment = await tx.appointment.create({
       data: {
-        status: AppointmentStatus.PEDDING,
+        status: AppointmentStatus.PENDING,
       },
     });
 
@@ -74,17 +74,17 @@ const payAppointment = async (payload: any, user: RequestUser) => {
   if (!existingAppointment) {
     throw new Error("Appointment does not exists");
   }
-  if (existingAppointment.status !== "PEDDING") {
-    throw new Error("Appointment is not pedding");
+  if (existingAppointment.status !== "PENDING") {
+    throw new Error("Appointment is not PENDING");
   }
-  if (existingAppointment.status !== "PEDDING") {
-    throw new Error("Appointment is not pedding");
+  if (existingAppointment.status !== "PENDING") {
+    throw new Error("Appointment is not PENDING");
   }
-  if (existingAppointment.status !== "PEDDING") {
-    throw new Error("Appointment is not pedding");
+  if (existingAppointment.status !== "PENDING") {
+    throw new Error("Appointment is not PENDING");
   }
-  if (existingAppointment.status !== "PEDDING") {
-    throw new Error("Appointment is not pedding");
+  if (existingAppointment.status !== "PENDING") {
+    throw new Error("Appointment is not PENDING");
   }
 
   // if (existingAppointment.status === "COMPLETED") {
@@ -286,24 +286,24 @@ const cancelAppointment = async (payload: any) => {
     }
 
     const bkashRefundPaymentResponse = await fetch(
-				`${config.bkash_base_url}/tokenized/checkout/payment/refund`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Accept: "application/json",
-						Authorization: bkashIdToken,
-						"X-App-Key": config.bkash_app_key,
-					},
-					body: JSON.stringify({
-						paymentID: existingAppointment.payment?.bkashPyamentId,
-						trxID: existingAppointment.payment?.bkashIrxId,
-						amount: existingAppointment.payment?.amount.toString(),
-						sku: "Appointment Cancellation",
-						reason: "Patient Cancelled The Appointment",
-					}),
-				},
-			);
+      `${config.bkash_base_url}/tokenized/checkout/payment/refund`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: bkashIdToken,
+          "X-App-Key": config.bkash_app_key,
+        },
+        body: JSON.stringify({
+          paymentID: existingAppointment.payment?.bkashPyamentId,
+          trxID: existingAppointment.payment?.bkashIrxId,
+          amount: existingAppointment.payment?.amount.toString(),
+          sku: "Appointment Cancellation",
+          reason: "Patient Cancelled The Appointment",
+        }),
+      },
+    );
 
     const bkashRefundResult = await bkashRefundPaymentResponse.json();
     const updatedPayment = await tx.payment.update({
@@ -316,7 +316,7 @@ const cancelAppointment = async (payload: any) => {
         refundAmmount: bkashRefundResult.amount,
         refundReason: "patiant cancelled the appointment",
         status: PaymentStatus.REFUNDED,
-        getwayResponse: bkashRefundResult
+        getwayResponse: bkashRefundResult,
       },
     });
 

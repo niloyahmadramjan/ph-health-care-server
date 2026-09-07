@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "AppointmentStatus" AS ENUM ('PEDDING', 'CONFIRMED', 'CANCELLED', 'ONGOING', 'COMPLETED');
+CREATE TYPE "AppointmentStatus" AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED', 'ONGOING', 'COMPLETED');
 
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('UNPAID', 'PAID', 'FAILED', 'CANCELLED', 'REFUNDED');
@@ -7,7 +7,7 @@ CREATE TYPE "PaymentStatus" AS ENUM ('UNPAID', 'PAID', 'FAILED', 'CANCELLED', 'R
 -- CreateTable
 CREATE TABLE "appointments" (
     "id" TEXT NOT NULL,
-    "status" "AppointmentStatus" NOT NULL DEFAULT 'PEDDING',
+    "status" "AppointmentStatus" NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
