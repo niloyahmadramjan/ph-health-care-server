@@ -17,7 +17,7 @@ import { IQuery } from "../doctor/doctor.interface";
 import { ScheduleWhereInput } from "../../../generated/prisma/models";
 import { ScheduleStatus } from "../../../generated/prisma/enums";
 
-const createShedule = async (
+const createSchedule = async (
   payload: ICreateSchedulePayload,
   user: RequestUser,
 ) => {
@@ -74,7 +74,7 @@ const createShedule = async (
   return schedule;
 };
 
-const getMySchedule = async (query: IQuery, user: RequestUser) => {
+const getMySchedules = async (query: IQuery, user: RequestUser) => {
   const doctor = await prisma.doctor.findUnique({
     where: {
       userId: user.userId,
@@ -138,12 +138,12 @@ const getMySchedule = async (query: IQuery, user: RequestUser) => {
       page,
       limit,
       total,
-      totalPage: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit),
     },
   };
 };
 
-const getAllSchedules = async (query: IQuery, user: RequestUser) => {
+const getAllSchedules = async (query: IQuery) => {
   const limit = query.limit ? Number(query.limit) : 10;
   const page = query.page ? Number(query.page) : 1;
   const skip = (page - 1) * limit;
@@ -207,12 +207,12 @@ const getAllSchedules = async (query: IQuery, user: RequestUser) => {
       page,
       limit,
       total,
-      totalPage: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit),
     },
   };
 };
 
-const getScheduleByid = async (scheduleid: string) => {
+const getScheduleById = async (scheduleid: string) => {
   const schedule = await prisma.schedule.findUnique({
     where: {
       id: scheduleid,
@@ -359,7 +359,7 @@ const updateSchedule = async (
   return updateSchedule;
 };
 
-const publishedShedule = async (scheduleId: string, user: RequestUser) => {
+const publishSchedule = async (scheduleId: string, user: RequestUser) => {
   const doctor = await prisma.doctor.findUnique({
     where: {
       userId: user.userId,
@@ -510,13 +510,13 @@ const getTodaysSchedules = async (query: IQuery) => {
   };
 };
 
-export const ScheduleService = {
-  createShedule,
-  getMySchedule,
+export const ScheduleServices = {
+  createSchedule,
+  getMySchedules,
   getAllSchedules,
-  getScheduleByid,
+  getScheduleById,
   updateSchedule,
-  publishedShedule,
+  publishSchedule,
   deleteSchedule,
   getTodaysSchedules,
 };
