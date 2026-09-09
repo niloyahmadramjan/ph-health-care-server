@@ -33,3 +33,11 @@ export interface IQuery {
 	// any others filter fields can be added here
 	[key: string]: any;
 }
+
+
+export interface IUpdateDoctorProfilePayload {
+    address?: string;
+    bio?: string;
+    consultationFee?: number;
+    contactNumber?: string;
+}
