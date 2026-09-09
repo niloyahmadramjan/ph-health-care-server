@@ -1,15 +1,15 @@
 export interface IBookAppointmentPayload {
-  scheduleId: string;
+	scheduleId: string;
 }
 
 export interface IPayAppointmentPayload {
-  appointmentId: string;
+	appointmentId: string;
 }
 
 export interface ICancelAppointmentPayload {
-  appointmentId: string;
+	appointmentId: string;
 }
 
 export interface IUpdateAppointment {
-  status: "ONGOING" | "COMPLETED";
+	status: "ONGOING" | "COMPLETED";
 }
