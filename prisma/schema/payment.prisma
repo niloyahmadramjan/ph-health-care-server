@@ -16,7 +16,7 @@ model payment {
   refundedAt            String?
 
   appointmentID String      @unique
-  appointment   Apppointment @relation(fields: [appointmentID], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  appointment   Appointment @relation(fields: [appointmentID], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdAt     DateTime    @default(now())
   updateAt      DateTime    @updatedAt
 
