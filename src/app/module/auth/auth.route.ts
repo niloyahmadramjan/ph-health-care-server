@@ -8,20 +8,20 @@ import { authValidation } from "./auth.validation";
 const router = Router();
 
 router.post(
-  "/register",
-  UserValidation.validateRequest(authValidation.PatientRegistrationZodSchema),
-  AuthController.registerPatient,
+	"/register",
+	UserValidation.validateRequest(authValidation.PatientRegistrationZodSchema),
+	AuthController.registerPatient,
 );
 router.post(
-  "/verify-otp",
-  UserValidation.validateRequest(authValidation.VerifyOtpAndRegister),
-  AuthController.verifyOtpAndRegister,
+	"/verify-otp",
+	UserValidation.validateRequest(authValidation.VerifyOtpAndRegister),
+	AuthController.verifyOtpAndRegister,
 );
 router.post("/login", AuthController.loginUser);
 router.get(
-  "/me",
-  auth(Role.ADMIN, Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN),
-  AuthController.getMe,
+	"/me",
+	auth(Role.ADMIN, Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN),
+	AuthController.getMe,
 );
 router.post("/refresh-token", AuthController.refreshToken);
 router.post("/google", AuthController.googleLogin);

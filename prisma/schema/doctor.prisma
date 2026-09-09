@@ -1,5 +1,6 @@
 model Doctor {
   id              String             @id @default(uuid())
+  name            String
   email           String             @unique
   address         String?
   specialization  String

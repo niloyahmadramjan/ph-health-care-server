@@ -4,6 +4,10 @@ import { UserController } from "./user.controller";
 
 const router = Router();
 
-router.patch("/profile-image",upload.single("profileImage"), UserController.uploadProfileImage);
+router.patch(
+	"/profile-image",
+	upload.single("profileImage"),
+	UserController.uploadProfileImage,
+);
 
 export const UserRoutes = router;
