@@ -1,30 +1,65 @@
 import { Router } from "express";
-import { appointmentController } from "./appointment.controller";
-import { auth } from "../../middleware/checkAuth";
 import { Role } from "../../../generated/prisma/enums";
+import { auth } from "../../middleware/checkAuth";
+import { AppointmentController } from "./appointment.controller";
+import { BookAppointmentValidationZodSchema, UpdateAppointmentStatusValidationZodSchema } from "./appointment.validation";
+import { validateRequest } from "../../middleware/userValidation";
+
 const router = Router();
 
 router.post(
 	"/book-appointment",
 	auth(Role.PATIENT),
-	appointmentController.appointmentPaymentCreate,
+	validateRequest(BookAppointmentValidationZodSchema),
+	AppointmentController.bookAppointment,
 );
 router.post(
 	"/pay-appointment",
 	auth(Role.PATIENT),
-	appointmentController.payAppointment,
+	AppointmentController.payAppointment,
 );
-
 router.post(
 	"/cancel-appointment",
 	auth(Role.PATIENT, Role.ADMIN, Role.SUPER_ADMIN),
-	appointmentController.cancelAppointment,
+	AppointmentController.cancelAppointment,
 );
 
-// book appointment callback url
+//book appointment callback url
 router.get(
 	"/book-appointment/payment/callback",
-	appointmentController.bookAppointmentCallback,
+	AppointmentController.bookAppointmentCallback,
 );
 
-export const AppointmentRoutes = router;
+router.patch(
+	"/update-status/:appointmentId",
+	auth(Role.DOCTOR),
+	validateRequest(UpdateAppointmentStatusValidationZodSchema),
+	AppointmentController.updateAppointmentStatus,
+);
+
+router.get(
+	"/my-appointments",
+	auth(Role.PATIENT),
+	AppointmentController.getMyAppointments,
+);
+
+router.get(
+	"/doctor-appointments",
+	auth(Role.DOCTOR),
+	AppointmentController.getDoctorAppointments,
+);
+
+router.get(
+	"/all-appointments",
+	auth(Role.ADMIN, Role.SUPER_ADMIN),
+	AppointmentController.getAllAppointments,
+);
+
+router.get(
+	"/:appointmentId",
+	auth(Role.PATIENT, Role.DOCTOR, Role.ADMIN, Role.SUPER_ADMIN),
+	AppointmentController.getSingleAppointment,
+);
+
+
+export const AppointementRoutes = router;

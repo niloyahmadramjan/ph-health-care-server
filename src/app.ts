@@ -11,9 +11,10 @@ import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { UserRoutes } from "./app/module/user/user.route";
-import { getBkashIdToken } from "./app/lib/bkash";
-import { AppointmentRoutes } from "./app/module/appointment/appointment.route";
 import { DoctorRouter } from "./app/module/doctor/doctor.route";
+import { ScheduleRoutes } from "./app/module/schedule/schedule.route";
+import { AppointementRoutes } from "./app/module/appointment/appointment.route";
+import { PaymentRoutes } from "./app/module/payment/payment.route";
 
 const app: Application = express();
 
@@ -33,16 +34,10 @@ app.use(cookieParser());
 
 app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/user", UserRoutes);
-app.use("/api/v1/appointment", AppointmentRoutes);
+app.use("/api/v1/appointment", AppointementRoutes);
 app.use("/api/v1/doctor", DoctorRouter);
-
-app.get("/test", async (req: Request, res: Response) => {
-	const bkashToken = await getBkashIdToken();
-	console.log(bkashToken);
-	res.status(200).json({
-		messege: "testing successfully",
-	});
-});
+app.use("/api/v1/schedule", ScheduleRoutes);
+app.use("/api/v1/payment", PaymentRoutes);
 
 // Basic route
 app.get("/", async (req: Request, res: Response) => {
